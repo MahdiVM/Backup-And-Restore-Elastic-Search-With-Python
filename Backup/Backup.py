@@ -3,7 +3,7 @@ import os
 
 import paramiko
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QFileDialog, QTreeWidgetItem
+from PyQt5.QtWidgets import QFileDialog, QTreeWidgetItem, QMessageBox
 from elasticsearch import Elasticsearch
 
 
@@ -202,7 +202,7 @@ class Ui_MainWindow(object):
         data.update({'Password': self.txtSourcePassword.text()})
 
         es = Elasticsearch(
-            [data.get('IP')],
+            host=data.get('IP'),
             http_auth=(data.get('Username'), data.get('Password')),
             scheme="http",
             port=data.get('Port')
@@ -225,6 +225,8 @@ class Ui_MainWindow(object):
         sys.exit()
 
     def backup(self):
+        repository_exists = True
+        snapshot_exists = True
         data = {}
         data.update({'IP': self.txtSourceIP.text()})
         data.update({'Port': self.txtSourcePort.text()})
@@ -239,7 +241,7 @@ class Ui_MainWindow(object):
         data.update({'SSHPassword': self.txtSSHPassword.text()})
 
         es = Elasticsearch(
-            [data.get('IP')],
+            host=data.get('IP'),
             http_auth=(data.get('Username'), data.get('Password')),
             scheme="http",
             port=data.get('Port')
@@ -247,20 +249,45 @@ class Ui_MainWindow(object):
 
         print('Ping Elastic Source : ', es.ping())
 
-        repo_body = {
-            "type": "fs",
-            "settings": {
-                "location": data.get('Path')
-            }
-        }
-        es.snapshot.create_repository(repository=data.get('Repository'), body=repo_body)
+        repo = es.snapshot.get_repository(repository='_all')
 
-        snapshot_body = {
-            "indices": "*,-.*",
-            "ignore_unavailable": True,
-            "include_global_state": False
-        }
-        es.snapshot.create(repository=data.get('Repository'), snapshot=data.get('Snapshot'), body=snapshot_body)
+        for key, value in repo.items():
+            if key == data.get('Repository').strip():
+                repository_exists = False
+
+        if repository_exists:
+            repo_body = {
+                "type": "fs",
+                "settings": {
+                    "location": data.get('Path')
+                }
+            }
+            es.snapshot.create_repository(repository=data.get('Repository'), body=repo_body)
+
+        snap = es.snapshot.get(repository=data.get('Repository'), snapshot='_all')
+        snap = snap.get('snapshots')
+        for value in snap:
+            if value.get('snapshot') == data.get('Snapshot').strip():
+                snapshot_exists = False
+
+        if snapshot_exists:
+            snapshot_body = {
+                "indices": "*,-.*",
+                "ignore_unavailable": True,
+                "include_global_state": False
+            }
+            es.snapshot.create(repository=data.get('Repository'), snapshot=data.get('Snapshot'), body=snapshot_body)
+        else:
+            # Create a message box
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("Warning")
+            msg_box.setText("This snapshot exists")
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setStandardButtons(QMessageBox.Ok)
+
+            # Show the message box
+            msg_box.exec_()
+            return
 
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog

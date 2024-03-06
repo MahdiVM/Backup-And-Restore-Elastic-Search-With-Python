@@ -1,54 +1,21 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QApplication, QMessageBox
 
-class TreeExample(QMainWindow):
-    def __init__(self):
-        super().__init__()
+def show_message_box():
+    app = QApplication(sys.argv)
 
-        self.setWindowTitle("Tree Example")
-        self.setGeometry(100, 100, 400, 400)
+    # Create a message box
+    msg_box = QMessageBox()
+    msg_box.setWindowTitle("پیغام")
+    msg_box.setText("این یک پیغام است.")
+    msg_box.setIcon(QMessageBox.Information)
+    msg_box.setStandardButtons(QMessageBox.Ok)
 
-        self.init_ui()
-
-    def init_ui(self):
-        # Create a tree widget
-        tree_widget = QTreeWidget(self)
-        tree_widget.setHeaderLabels(["Title", "Description"]) # Set headers
-
-        # Add root items
-        root1 = QTreeWidgetItem(tree_widget)
-        root1.setText(0, "Root 1")
-        root1.setText(1, "Description of Root 1")
-
-        root2 = QTreeWidgetItem(tree_widget)
-        root2.setText(0, "Root 2")
-        root2.setText(1, "Description of Root 2")
-
-        # Add child items to root1
-        child1 = QTreeWidgetItem(root1)
-        child1.setText(0, "Child 1 of Root 1")
-        child1.setText(1, "Description of Child 1")
-
-        child2 = QTreeWidgetItem(root1)
-        child2.setText(0, "Child 2 of Root 1")
-        child2.setText(1, "Description of Child 2")
-
-        # Add child items to root2
-        child3 = QTreeWidgetItem(root2)
-        child3.setText(0, "Child 1 of Root 2")
-        child3.setText(1, "Description of Child 1")
-
-        child4 = QTreeWidgetItem(root2)
-        child4.setText(0, "Child 2 of Root 2")
-        child4.setText(1, "Description of Child 2")
-
-        # Expand all items
-        tree_widget.expandAll()
-
-        self.setCentralWidget(tree_widget)
+    # Show the message box
+    msg_box.exec_()
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    tree_example = TreeExample()
-    tree_example.show()
-    sys.exit(app.exec_())
+    show_message_box()
+    greeting = "     Hello!  "
+
+    print(greeting.strip(), "How are you?")
